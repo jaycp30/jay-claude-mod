@@ -1,0 +1,9 @@
+# Written by Claude Code each time it loads a mod from disk. Regenerated, and
+# claude-code-mcp/ lists the MCP tools connected on the author's machine.
+mods/*/.claude-plugin/types/
+
+# Personal learning checklist; stays local.
+understanding.md
+
+.DS_Store
+node_modules/

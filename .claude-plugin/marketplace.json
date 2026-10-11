@@ -1,0 +1,17 @@
+{
+  "name": "jay-claude-mod",
+  "description": "Claude Code mods (function-hook plugins) for safer AWS work and a nicer chat.",
+  "owner": { "name": "jaycp30", "url": "https://github.com/jaycp30" },
+  "plugins": [
+    {
+      "name": "client-guard",
+      "source": "./mods/client-guard",
+      "description": "Asks you before any AWS write in a client account, enforces --region in personal projects, keeps CLAUDE.md hand-curated, and shows the AWS context above the prompt."
+    },
+    {
+      "name": "chat-timestamps",
+      "source": "./mods/chat-timestamps",
+      "description": "Shows when each message was sent, like a messaging app."
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "name": "client-guard",
+  "version": "0.1.0",
+  "description": "Asks you before any AWS write in a client account, enforces --region in personal projects, keeps CLAUDE.md hand-curated, and shows the AWS context above the prompt.",
+  "author": {
+    "name": "jaycp30",
+    "url": "https://github.com/jaycp30"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "workRoot": {
+      "type": "string",
+      "title": "Client work folder",
+      "description": "Sessions under this folder are client work: every AWS write asks you first. Layout assumed: <workRoot>/<Client>/<ticket-folder>.",
+      "default": "~/Documents"
+    },
+    "sideRoot": {
+      "type": "string",
+      "title": "Personal projects folder",
+      "description": "Sessions under this folder must pass --region on every regional AWS call.",
+      "default": "~/Claude-test"
+    },
+    "sideRegion": {
+      "type": "string",
+      "title": "Personal default region",
+      "description": "The region suggested when a personal-project AWS call has no --region.",
+      "default": "ap-northeast-1"
+    },
+    "ssoRegion": {
+      "type": "string",
+      "title": "IAM Identity Center region",
+      "description": "Where Identity Center lives; suggested for sso-admin and identitystore calls instead of the personal default.",
+      "default": "ap-southeast-1"
+    },
+    "proposalsFile": {
+      "type": "string",
+      "title": "CLAUDE.md proposals file",
+      "description": "Where blocked CLAUDE.md edits are recorded as proposals for you to review.",
+      "default": "~/.claude/claude-md-proposals.md"
+    }
+  }
+}

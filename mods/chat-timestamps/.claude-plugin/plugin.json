@@ -1,0 +1,10 @@
+{
+  "name": "chat-timestamps",
+  "version": "0.1.0",
+  "description": "Shows when each message was sent, like a messaging app: a small time under your prompts and Claude's replies.",
+  "author": {
+    "name": "jaycp30",
+    "url": "https://github.com/jaycp30"
+  },
+  "types": "./types/index.d.ts"
+}
