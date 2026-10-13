@@ -1,0 +1,9 @@
+{
+  "name": "evidence-meter",
+  "version": "0.1.0",
+  "description": "Shows, under every answer, what Claude actually checked that turn: files read, commands and tests run, web pages fetched, and what failed.",
+  "author": {
+    "name": "jaycp30",
+    "url": "https://github.com/jaycp30"
+  }
+}

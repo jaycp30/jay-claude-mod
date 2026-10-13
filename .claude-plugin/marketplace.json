@@ -12,6 +12,11 @@
       "name": "chat-timestamps",
       "source": "./mods/chat-timestamps",
       "description": "Shows when each message was sent, like a messaging app."
+    },
+    {
+      "name": "evidence-meter",
+      "source": "./mods/evidence-meter",
+      "description": "Shows, under every answer, what Claude actually checked that turn: files read, commands and tests run, web pages fetched, and what failed."
     }
   ]
 }

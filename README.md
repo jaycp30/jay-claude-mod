@@ -7,6 +7,7 @@ Claude Code itself behaves.
 | --- | --- |
 | [`client-guard`](mods/client-guard) | Asks **you** before any AWS write in a client account, makes personal-project AWS calls pass `--region`, keeps `CLAUDE.md` hand-curated, and shows the AWS context above the prompt. |
 | [`chat-timestamps`](mods/chat-timestamps) | Puts a small time under each of your prompts and each of Claude's replies, like a messaging app. |
+| [`evidence-meter`](mods/evidence-meter) | One line under every answer saying what Claude actually checked that turn: files read, commands and tests run, what failed. |
 
 They grew out of months of real usage: a lot of AWS CLI work in other people's accounts, and
 repeated "please don't edit my CLAUDE.md". Rules in `CLAUDE.md` are advice a long session can
@@ -92,6 +93,30 @@ today, `Oct 10 14:32` for older ones, in your machine's time zone.
 
 **Limit:** messages stored before the mod loaded (a resumed session, or the start of the session
 where you install it) have no time to show and are drawn as before.
+
+## evidence-meter
+
+Claude has no confidence score to show: the API returns no token probabilities. What *can*
+be shown honestly is what the answer is grounded in. Under every answer:
+
+| Line | Meaning |
+| --- | --- |
+| `✓ 3 reads · 2 commands · 1 check passed` | It looked and ran things, and nothing failed |
+| `⚠ 1 check FAILED` / `⚠ … · 2 failed` | A test, type-check or validator failed, or a tool errored |
+| `⚠ … · changed 2 files · nothing run after the last change` | It edited files and didn't run anything afterwards |
+| `⚠ unchecked: answered without reading or running anything` | A substantial answer from memory alone |
+| `○ no tools used` | A short reply (under 300 characters) with no tools: small talk |
+
+*Checks* are test runners, type-checkers and validators (`npm test`, `pytest`, `tsc`,
+`terraform plan`, `claude plugin test`, …). Only the main conversation's tools count; a
+subagent counts once.
+
+**Limits:** it measures grounding, not correctness. Reading three files doesn't mean they
+were the right three. A check it doesn't recognise counts as a plain command.
+
+Pair it with the `/how-sure` skill
+([jay-claude-skill](https://github.com/jaycp30/jay-claude-skill/tree/main/general/how-sure))
+when you want the claims in one answer audited one by one.
 
 ## Developing
 
