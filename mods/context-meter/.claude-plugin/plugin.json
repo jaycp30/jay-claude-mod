@@ -1,0 +1,10 @@
+{
+  "name": "context-meter",
+  "version": "0.1.0",
+  "description": "Shows how full the context window is: a line above the prompt, and /context-meter for a pane with the breakdown by category.",
+  "author": {
+    "name": "jaycp30",
+    "url": "https://github.com/jaycp30"
+  },
+  "types": "./types/index.d.ts"
+}

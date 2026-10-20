@@ -280,13 +280,15 @@ export const register: Register = (on, options) => {
     }
   })
 
-  // Rule 4: the context band above the prompt.
+  // Rule 4: the context band above the prompt. Other mods draw bands too
+  // (context-meter), so this one stacks on top of whatever is beneath it.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (e.props.hasSurvey) return next(e)
+    const below = await next(e)
+    if (e.props.hasSurvey) return below
     const { work } = await paths($)
     const { client, ticket } = clientContext(await $.session.cwd(), work)
     const aws = await read($, lastAws)
-    if (!client && !aws) return next(e)
+    if (!client && !aws) return below
 
     const { Box, Text } = $.ui.resolve(e)
     const isRisky = isRiskyProfile(aws?.profile)
@@ -298,13 +300,16 @@ export const register: Register = (on, options) => {
     ].filter((p): p is string => p !== undefined)
 
     return (
-      <Box>
-        <Text color="subtle">{parts.join(' · ')}{aws ? '  ' : ''}</Text>
-        {aws ? (
-          <Text color={isRisky ? 'warning' : 'success'} bold={isRisky}>
-            {isRisky ? 'write-capable' : 'read-only'}
-          </Text>
-        ) : null}
+      <Box flexDirection="column">
+        <Box>
+          <Text color="subtle">{parts.join(' · ')}{aws ? '  ' : ''}</Text>
+          {aws ? (
+            <Text color={isRisky ? 'warning' : 'success'} bold={isRisky}>
+              {isRisky ? 'write-capable' : 'read-only'}
+            </Text>
+          ) : null}
+        </Box>
+        {below}
       </Box>
     )
   })

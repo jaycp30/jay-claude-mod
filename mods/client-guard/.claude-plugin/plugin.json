@@ -1,6 +1,6 @@
 {
   "name": "client-guard",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Asks you before any AWS write in a client account, enforces --region in personal projects, keeps CLAUDE.md hand-curated, and shows the AWS context above the prompt.",
   "author": {
     "name": "jaycp30",

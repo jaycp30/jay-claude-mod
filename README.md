@@ -8,6 +8,7 @@ Claude Code itself behaves.
 | [`client-guard`](mods/client-guard) | Asks **you** before any AWS write in a client account, makes personal-project AWS calls pass `--region`, keeps `CLAUDE.md` hand-curated, and shows the AWS context above the prompt. |
 | [`chat-timestamps`](mods/chat-timestamps) | Puts a small time under each of your prompts and each of Claude's replies, like a messaging app. |
 | [`evidence-meter`](mods/evidence-meter) | One line under every answer saying what Claude actually checked that turn: files read, commands and tests run, what failed. |
+| [`context-meter`](mods/context-meter) | How full the context window is: a line above the prompt, and `/context-meter` for the breakdown by category. |
 
 They grew out of months of real usage: a lot of AWS CLI work in other people's accounts, and
 repeated "please don't edit my CLAUDE.md". Rules in `CLAUDE.md` are advice a long session can
@@ -117,6 +118,20 @@ were the right three. A check it doesn't recognise counts as a plain command.
 Pair it with the `/how-sure` skill
 ([jay-claude-skill](https://github.com/jaycp30/jay-claude-skill/tree/main/general/how-sure))
 when you want the claims in one answer audited one by one.
+
+## context-meter
+
+The same numbers `/context` shows, kept on screen.
+
+- **Above the prompt, always:** `context 95k / 1M · 10% · compacts at 987k  █▓▓░░░░░░░░░`,
+  in the warning colour once you're 80% of the way to auto-compaction.
+- **`/context-meter`** opens a pane: the bar full width, then each category (system prompt,
+  tools, MCP tools, memory files, skills, agents, messages, free space, compaction buffer)
+  with its tokens and share of the window. Close it and run the command again to reopen it.
+
+It refreshes when the session starts, after every answer and after a compaction. The
+breakdown is the engine's local estimate (`summary` mode): no API calls, no cost. Colours
+are the ones `/context` uses for each category.
 
 ## Developing
 

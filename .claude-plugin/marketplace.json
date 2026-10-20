@@ -17,6 +17,11 @@
       "name": "evidence-meter",
       "source": "./mods/evidence-meter",
       "description": "Shows, under every answer, what Claude actually checked that turn: files read, commands and tests run, web pages fetched, and what failed."
+    },
+    {
+      "name": "context-meter",
+      "source": "./mods/context-meter",
+      "description": "Shows how full the context window is: a line above the prompt, and /context-meter for a pane with the breakdown by category."
     }
   ]
 }
