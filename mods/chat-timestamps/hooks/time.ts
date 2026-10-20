@@ -12,16 +12,12 @@ export function parseOffset(text: string): number | undefined {
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const pad = (n: number) => String(n).padStart(2, '0')
 
-// "14:32" for a message from the same local day as `today`, otherwise
-// "Oct 10 14:32" -- the way messaging apps label older messages.
-export function timeLabel(at: number, today: number, offsetMinutes: number): string {
+// Local date and time, e.g. "2026-Oct-20 14:32": year first so it reads in
+// order, the month as a word so 10/11 can't be misread as day or month.
+export function timeLabel(at: number, offsetMinutes: number): string {
   const local = new Date(at + offsetMinutes * 60_000)
-  const now = new Date(today + offsetMinutes * 60_000)
-  const time = `${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}`
-  const isSameDay = local.getUTCFullYear() === now.getUTCFullYear()
-    && local.getUTCMonth() === now.getUTCMonth()
-    && local.getUTCDate() === now.getUTCDate()
-  return isSameDay ? time : `${MONTHS[local.getUTCMonth()]} ${local.getUTCDate()} ${time}`
+  const date = `${local.getUTCFullYear()}-${MONTHS[local.getUTCMonth()]}-${pad(local.getUTCDate())}`
+  return `${date} ${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}`
 }
 
 // The routes a row comes in by that the person sees as a chat message: their

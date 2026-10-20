@@ -13,22 +13,20 @@ describe('time helpers', () => {
     expect(parseOffset('garbage')).toBeUndefined()
   })
 
-  test('same local day shows the time only', () => {
-    expect(timeLabel(AT, AT, 60)).toBe('16:31')
+  test('every label is YYYY-Mon-DD HH:MM in local time', () => {
+    expect(timeLabel(AT, 60)).toBe('2026-Oct-11 16:31')
+    expect(timeLabel(AT, 0)).toBe('2026-Oct-11 15:31')
   })
 
-  test('another day shows the date too', () => {
-    const nextDay = AT + 24 * 60 * 60_000
-    expect(timeLabel(AT, nextDay, 60)).toBe('Oct 11 16:31')
+  test('single-digit days and hours are zero-padded', () => {
+    expect(timeLabel(Date.UTC(2026, 0, 5, 7, 4), 0)).toBe('2026-Jan-05 07:04')
   })
 
-  test('the offset decides the local day', () => {
-    // 23:30 UTC on the 11th is 08:30 on the 12th at UTC+09:00, while
-    // 10:00 UTC on the 11th is still the 11th there (19:00).
-    const late = Date.UTC(2026, 9, 11, 23, 30)
-    const earlier = Date.UTC(2026, 9, 11, 10, 0)
-    expect(timeLabel(late, late, 540)).toBe('08:30')
-    expect(timeLabel(late, earlier, 540)).toBe('Oct 12 08:30')
+  test('the offset decides the local date', () => {
+    // 23:30 UTC on the 11th is already 08:30 on the 12th at UTC+09:00, and
+    // 00:30 UTC on Jan 1st is still New Year's Eve at UTC-05:00.
+    expect(timeLabel(Date.UTC(2026, 9, 11, 23, 30), 540)).toBe('2026-Oct-12 08:30')
+    expect(timeLabel(Date.UTC(2027, 0, 1, 0, 30), -300)).toBe('2026-Dec-31 19:30')
   })
 })
 

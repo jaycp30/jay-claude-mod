@@ -89,8 +89,8 @@ Know what it does **not** see before you rely on it:
 
 ## chat-timestamps
 
-Records when each message of the main chat is stored and shows it under the message: `14:32`
-today, `Oct 10 14:32` for older ones, in your machine's time zone.
+Records when each message of the main chat is stored and shows it under the message as
+`2026-Oct-20 14:32`, in your machine's time zone.
 
 **Limit:** messages stored before the mod loaded (a resumed session, or the start of the session
 where you install it) have no time to show and are drawn as before.

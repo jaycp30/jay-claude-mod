@@ -18,13 +18,11 @@ const sentAt = atom({ plugin: 'chat-timestamps', key: 'sentAt' } as const, null 
 
 // Set by session.start; the module's own variables reset on every reload.
 let offsetMinutes = 0
-let sessionStartedAt = 0
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const run = await $.process.run(['date', '+%z']).catch(() => undefined)
     offsetMinutes = parseOffset(run?.stdout ?? '') ?? 0
-    sessionStartedAt = await $.clock.now()
     return next(e)
   })
 
@@ -49,7 +47,7 @@ export const register: Register = on => {
       <Box flexDirection="column">
         {drawn}
         <Box justifyContent="flex-end">
-          <Text dimColor>{timeLabel(at, sessionStartedAt || at, offsetMinutes)}</Text>
+          <Text dimColor>{timeLabel(at, offsetMinutes)}</Text>
         </Box>
       </Box>
     )
@@ -65,7 +63,7 @@ export const register: Register = on => {
     return (
       <Box flexDirection="column">
         {drawn}
-        <Text dimColor>{timeLabel(at, sessionStartedAt || at, offsetMinutes)}</Text>
+        <Text dimColor>{timeLabel(at, offsetMinutes)}</Text>
       </Box>
     )
   })

@@ -1,6 +1,6 @@
 {
   "name": "chat-timestamps",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shows when each message was sent, like a messaging app: a small time under your prompts and Claude's replies.",
   "author": {
     "name": "jaycp30",
