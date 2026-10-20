@@ -2,7 +2,8 @@
 //
 //  - A line above the prompt, always: tokens used, window, % and where
 //    auto-compaction kicks in, with a small coloured bar.
-//  - /context-meter opens a pane with the breakdown by category.
+//  - /context-meter, or the band's [ details ] button, opens a pane with the
+//    breakdown by category.
 //
 // The numbers come from $.session.usage({ breakdown: 'summary' }), the same
 // breakdown /context shows, estimated locally: no API calls, no cost. They are
@@ -12,7 +13,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { ContextSnapshot } from '../types'
-import { barSegments, formatTokens, glyph, isNearLimit, percentOf, toSnapshot } from './meter'
+import { barSegments, formatTokens, glyph, isNearLimit, orderRows, percentOf, share, toSnapshot } from './meter'
 
 const PANE = 'context-meter'
 const TITLE = 'Context window'
@@ -69,17 +70,19 @@ export const register: Register = on => {
     const s = await read($, snapshot)
     if (e.props.hasSurvey || !s) return below
 
-    const { Box, Text } = $.ui.resolve(e)
-    const width = Math.max(10, Math.min(24, e.props.bodyColumns - 40))
+    const { Box, Button, Text } = $.ui.resolve(e)
+    const width = Math.max(10, Math.min(24, e.props.bodyColumns - 52))
     return (
       <Box flexDirection="column">
         <Box>
           <Text color={isNearLimit(s) ? 'warning' : 'subtle'}>{`context ${headline(s)}  `}</Text>
-          {barSegments(s.rows, width).map(seg => (
+          {barSegments(orderRows(s.rows), width).map(seg => (
             <Text color={seg.row.color} dimColor={seg.row.kind === 'free'}>
               {glyph(seg.row.kind).repeat(seg.cells)}
             </Text>
           ))}
+          <Text> </Text>
+          <Button key="details" label="details" onPress={() => $.ui.open({ id: PANE, title: TITLE })} />
         </Box>
         {below}
       </Box>
@@ -93,30 +96,31 @@ export const register: Register = on => {
     if (!s) return <Text dimColor>No reading yet: it appears after the first answer.</Text>
 
     const width = Math.max(10, Math.min(60, e.props.bodyColumns))
-    const inWindow = s.rows.filter(r => r.kind !== 'deferred')
-    const deferred = s.rows.filter(r => r.kind === 'deferred' && r.tokens > 0)
-    const nameWidth = Math.max(...s.rows.map(r => r.name.length), 8)
+    const rows = orderRows(s.rows).filter(r => r.tokens > 0)
+    const nameWidth = Math.max(...rows.map(r => r.name.length), 8)
 
     return (
       <Box flexDirection="column">
         <Text bold color={isNearLimit(s) ? 'warning' : undefined}>{headline(s)}</Text>
         <Box>
-          {barSegments(s.rows, width).map(seg => (
+          {barSegments(orderRows(s.rows), width).map(seg => (
             <Text color={seg.row.color} dimColor={seg.row.kind === 'free'}>
               {glyph(seg.row.kind).repeat(seg.cells)}
             </Text>
           ))}
         </Box>
-        {inWindow.map(row => (
+        {rows.map(row => (
           <Box>
             <Text color={row.color}>{`${glyph(row.kind)} `}</Text>
-            <Text>{row.name.toLowerCase().padEnd(nameWidth + 2)}</Text>
-            <Text dimColor>{`${formatTokens(row.tokens).padStart(6)}  ${String(percentOf(row.tokens, s.max)).padStart(3)}%`}</Text>
+            <Text dimColor={row.kind === 'deferred'}>{row.name.padEnd(nameWidth + 2)}</Text>
+            <Text dimColor>
+              {`${formatTokens(row.tokens).padStart(7)}  ${row.kind === 'deferred' ? '     —' : `${share(row.tokens, s.max).padStart(5)}%`}`}
+            </Text>
           </Box>
         ))}
-        {deferred.map(row => (
-          <Text dimColor>{`  ${row.name.toLowerCase()}: ${formatTokens(row.tokens)}, loaded on demand, not in the window`}</Text>
-        ))}
+        {rows.some(r => r.kind === 'deferred') && (
+          <Text dimColor>— deferred: tool schemas loaded on demand, not in the window</Text>
+        )}
         <Text dimColor>{`${s.model} · estimate, updated after each answer`}</Text>
       </Box>
     )

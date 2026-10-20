@@ -18,13 +18,27 @@ export function toSnapshot(breakdown: SessionContextBreakdown): ContextSnapshot 
   }
 }
 
-// 950 -> "950", 4_200 -> "4.2k", 95_000 -> "95k", 1_000_000 -> "1M".
+// As /context writes them: one decimal, dropped when it's zero.
+// 950 -> "950", 4_200 -> "4.2k", 614_800 -> "614.8k", 95_000 -> "95k", 1_000_000 -> "1M".
 export function formatTokens(n: number): string {
-  const short = (value: number, unit: string) =>
-    `${value >= 10 ? Math.round(value) : Math.round(value * 10) / 10}${unit}`
+  const short = (value: number, unit: string) => `${Math.round(value * 10) / 10}${unit}`
   if (n >= 1_000_000) return short(n / 1_000_000, 'M')
   if (n >= 1_000) return short(n / 1_000, 'k')
   return String(Math.round(n))
+}
+
+// A category's share of the window with one decimal, as /context shows it:
+// 55.9, 1.6, 0.3.
+export function share(tokens: number, max: number): string {
+  if (max <= 0) return '0.0'
+  return ((tokens / max) * 100).toFixed(1)
+}
+
+// /context's order: content biggest first, then the compaction buffer, the
+// free space, and last the deferred tool schemas (not in the window).
+export function orderRows(rows: ContextRow[]): ContextRow[] {
+  const rank = { used: 0, buffer: 1, free: 2, deferred: 3 } as const
+  return [...rows].sort((a, b) => rank[a.kind] - rank[b.kind] || b.tokens - a.tokens)
 }
 
 // Whole percent of the window, never below 1 for a category that has tokens,

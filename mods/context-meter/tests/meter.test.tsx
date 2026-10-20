@@ -2,7 +2,7 @@ import type { On, SessionContextBreakdown } from 'claude-code'
 import { describe, expect, test } from 'claude-code/testing'
 
 import type { ContextRow } from '../types'
-import { barSegments, formatTokens, isNearLimit, percentOf, toSnapshot } from '../hooks/meter'
+import { barSegments, formatTokens, isNearLimit, orderRows, percentOf, share, toSnapshot } from '../hooks/meter'
 
 // A breakdown shaped like the one in the README screenshot. Only the fields the
 // mod reads are filled; the cast keeps the fixture readable.
@@ -28,12 +28,23 @@ describe('numbers', () => {
     expect(formatTokens(4_200)).toBe('4.2k')
     expect(formatTokens(95_000)).toBe('95k')
     expect(formatTokens(987_000)).toBe('987k')
+    expect(formatTokens(614_800)).toBe('614.8k')
+    expect(formatTokens(352_300)).toBe('352.3k')
     expect(formatTokens(1_000_000)).toBe('1M')
   })
   test('percentOf never shows a present category as 0%', () => {
     expect(percentOf(95_000, 1_000_000)).toBe(10)
     expect(percentOf(3_400, 1_000_000)).toBe(1)
     expect(percentOf(0, 1_000_000)).toBe(0)
+  })
+  test('share has one decimal, like /context', () => {
+    expect(share(558_600, 1_000_000)).toBe('55.9')
+    expect(share(3_100, 1_000_000)).toBe('0.3')
+  })
+  test("rows follow /context's order", () => {
+    expect(orderRows(toSnapshot(BREAKDOWN).rows).map(r => r.name)).toEqual([
+      'MCP tools', 'Messages', 'System prompt', 'Autocompact buffer', 'Free space', 'Deferred tools',
+    ])
   })
   test('near the limit means 80% of the way to compaction', () => {
     const s = toSnapshot(BREAKDOWN)
@@ -97,6 +108,33 @@ describe('drawing', () => {
     }
   })
 
+  test("the band's details button opens the pane", async ($, on) => {
+    const opened: string[] = []
+    on('session.usage', () => ({
+      value: { context: { tokens: 95_000, window: 1_000_000, percent: 10, breakdown: BREAKDOWN }, rateLimits: [], startedAt: 0 },
+    }))
+    on('command.register', () => ({ value: { command: 'context-meter' } }))
+    on('ui.open', ($, e) => {
+      opened.push(e.id)
+      return { value: { isPlaced: true } }
+    })
+    on('session.start', (_, e) => ({ cwd: e.cwd }))
+    // Nothing else draws a band here: the engine's own is empty.
+    on('ui.render', ($, e) => {
+      const { Box } = $.ui.resolve(e)
+      return <Box />
+    })
+    await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+    for (const surface of ['terminal', 'desktop'] as const) {
+      const ui = await $.ui.mount({
+        plugin: 'context-meter', surface, component: 'AbovePrompt', requestId: 'band', props: BAND_PROPS,
+      } as never)
+      await ui.press({ key: 'details' })
+      await ui.unmount()
+    }
+    expect(opened).toEqual(['context-meter', 'context-meter'])
+  })
+
   test('the pane lists each category with its tokens and share', async ($, on) => {
     world(on)
     await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
@@ -104,8 +142,9 @@ describe('drawing', () => {
       const ui = await $.ui.mount({
         plugin: 'context-meter', surface, component: 'Pane', requestId: 'context-meter', props: PANE_PROPS,
       } as never)
-      expect(await ui.find({ type: 'Text', text: 'mcp tools' })).toBeDefined()
-      expect((await ui.find({ type: 'Text', text: /52k/ }))?.text).toBe('   52k    5%')
+      expect(await ui.find({ type: 'Text', text: /^MCP tools/ })).toBeDefined()
+      expect((await ui.find({ type: 'Text', text: /52k/ }))?.text).toBe('    52k    5.2%')
+      expect((await ui.find({ type: 'Text', text: /^ +9k/ }))?.text).toBe('     9k       —')
       expect(await ui.find({ type: 'Text', text: /loaded on demand/ })).toBeDefined()
       await ui.unmount()
     }

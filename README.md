@@ -125,13 +125,16 @@ The same numbers `/context` shows, kept on screen.
 
 - **Above the prompt, always:** `context 95k / 1M · 10% · compacts at 987k  █▓▓░░░░░░░░░`,
   in the warning colour once you're 80% of the way to auto-compaction.
-- **`/context-meter`** opens a pane: the bar full width, then each category (system prompt,
-  tools, MCP tools, memory files, skills, agents, messages, free space, compaction buffer)
-  with its tokens and share of the window. Close it and run the command again to reopen it.
+- **`[ details ]` on the band, or `/context-meter`,** opens a pane laid out like `/context`:
+  the bar full width, then each category (messages, skills, MCP tools, memory files, system
+  prompt, agents, compaction buffer, free space, deferred tools) biggest first, with its
+  tokens and share of the window.
 
 It refreshes when the session starts, after every answer and after a compaction. The
-breakdown is the engine's local estimate (`summary` mode): no API calls, no cost. Colours
-are the ones `/context` uses for each category.
+breakdown is the engine's local estimate (`summary` mode): no API calls, no cost, and the
+same totals `/context` shows; `/context` may count a few categories more exactly.
+Colours are the theme colours `/context` assigns each category, which the desktop app's own
+`/context` view draws in a different palette.
 
 ## Developing
 
