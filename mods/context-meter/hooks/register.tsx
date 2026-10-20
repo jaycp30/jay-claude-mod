@@ -13,11 +13,17 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { ContextSnapshot } from '../types'
-import { barSegments, formatTokens, glyph, isNearLimit, orderRows, percentOf, share, toSnapshot } from './meter'
+import { asHostedButton, barSegments, formatTokens, glyph, isNearLimit, orderRows, percentOf, share, toSnapshot } from './meter'
 
 const PANE = 'context-meter'
 const TITLE = 'Context window'
 const snapshot = atom({ plugin: 'context-meter', key: 'snapshot' } as const, null as ContextSnapshot | null)
+
+// skill-map's book button, drawn after `details` when that mod offers one.
+// Another mod's state: only read, and its shape checked (asHostedButton).
+const HOSTED_BUTTON = { plugin: 'skill-map', key: 'hostedButton' } as const
+// Says to other mods that this one draws their offered button.
+const hostsButton = atom({ plugin: 'context-meter', key: 'hostsButton' } as const, false)
 
 // Reads the breakdown and stores it; every drawing that reads it redraws.
 // A failure leaves the last snapshot in place rather than blanking the meter.
@@ -41,6 +47,7 @@ export const register: Register = on => {
       description: 'Show the context window broken down by category in a pane',
     })
     await refresh($)
+    await update($, hostsButton, () => true)
     return started
   })
 
@@ -71,7 +78,21 @@ export const register: Register = on => {
     if (e.props.hasSurvey || !s) return below
 
     const { Box, Button, Text } = $.ui.resolve(e)
-    const width = Math.max(10, Math.min(24, e.props.bodyColumns - 52))
+    // Cast: the types only know this mod's own state, and depending on
+    // skill-map just for the types would make it required.
+    const offered = await ($.state.get(HOSTED_BUTTON as never) as Promise<{ value?: unknown }>)
+      .catch(() => undefined)
+    const hosted = asHostedButton(offered?.value)
+    // A hosted button needs room on the line: the bar gives up 8 cells for it,
+    // or the desktop may wrap the button onto a line of its own.
+    const width = Math.max(10, Math.min(24, e.props.bodyColumns - 52) - (hosted ? 8 : 0))
+    // The offering mod may be gone (turned off mid-session) while its state
+    // stays: log a failed run rather than dropping it.
+    const runHosted = () => {
+      if (!hosted) return
+      void $.command.run({ command: hosted.command, args: hosted.args })
+        .catch(error => $.ui.log(`context-meter: /${hosted.command} ${hosted.args} failed: ${String(error)}`))
+    }
     return (
       <Box flexDirection="column">
         <Box>
@@ -83,6 +104,8 @@ export const register: Register = on => {
           ))}
           <Text> </Text>
           <Button key="details" label="details" onPress={() => $.ui.open({ id: PANE, title: TITLE })} />
+          {hosted && <Text> </Text>}
+          {hosted && <Button key="hosted" label={hosted.label} onPress={runHosted} />}
         </Box>
         {below}
       </Box>

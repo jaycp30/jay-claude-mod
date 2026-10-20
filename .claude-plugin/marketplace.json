@@ -22,6 +22,11 @@
       "name": "context-meter",
       "source": "./mods/context-meter",
       "description": "Shows how full the context window is: a line above the prompt, and /context-meter for a pane with the breakdown by category."
+    },
+    {
+      "name": "skill-map",
+      "source": "./mods/skill-map",
+      "description": "A 📕 button above the prompt opens every installed skill and slash command, grouped and coloured, with the model's picks for this session on top."
     }
   ]
 }

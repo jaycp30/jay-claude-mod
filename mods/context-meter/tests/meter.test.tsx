@@ -2,7 +2,7 @@ import type { On, SessionContextBreakdown } from 'claude-code'
 import { describe, expect, test } from 'claude-code/testing'
 
 import type { ContextRow } from '../types'
-import { barSegments, formatTokens, isNearLimit, orderRows, percentOf, share, toSnapshot } from '../hooks/meter'
+import { asHostedButton, barSegments, formatTokens, isNearLimit, orderRows, percentOf, share, toSnapshot } from '../hooks/meter'
 
 // A breakdown shaped like the one in the README screenshot. Only the fields the
 // mod reads are filled; the cast keeps the fixture readable.
@@ -148,5 +148,65 @@ describe('drawing', () => {
       expect(await ui.find({ type: 'Text', text: /loaded on demand/ })).toBeDefined()
       await ui.unmount()
     }
+  })
+})
+
+// What skill-map offers in its state: the book button to draw after details.
+const BOOK = { label: '📕', command: 'skill-map', args: 'toggle' }
+
+// Answers reads of skill-map's state with `offered`; every other read goes
+// on to the kit's own state.
+function offer(on: On, offered: unknown) {
+  // The event's type knows only this mod's state, hence the widening.
+  on('state.get', ($, e, next) => {
+    const { plugin, key } = e as { plugin: string; key: string }
+    return plugin === 'skill-map' && key === 'hostedButton'
+      ? { value: { value: offered, version: 1 } as never }
+      : next(e)
+  })
+  // Nothing else draws a band here: the engine's own is empty.
+  on('ui.render', ($, e) => {
+    const { Box } = $.ui.resolve(e)
+    return <Box />
+  })
+}
+
+describe('a button another mod offers', () => {
+  test('asHostedButton takes only the full shape', () => {
+    expect(asHostedButton(BOOK)).toEqual(BOOK)
+    expect(asHostedButton({ ...BOOK, args: 3 })).toBeUndefined()
+    expect(asHostedButton(null)).toBeUndefined()
+  })
+
+  test('it sits after details on every surface; a press runs its command', async ($, on) => {
+    world(on)
+    offer(on, BOOK)
+    const ran: string[] = []
+    on('command.run', ($, e) => {
+      ran.push(`${e.command} ${e.args}`)
+      return {}
+    })
+    await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+    for (const surface of ['terminal', 'desktop'] as const) {
+      const ui = await $.ui.mount({
+        plugin: 'context-meter', surface, component: 'AbovePrompt', requestId: 'band', props: BAND_PROPS,
+      } as never)
+      expect((await ui.find({ key: 'hosted' }))?.props.label).toBe('📕')
+      await ui.press({ key: 'hosted' })
+      await ui.unmount()
+    }
+    expect(ran).toEqual(['skill-map toggle', 'skill-map toggle'])
+  })
+
+  test('nothing offered, or a malformed offer, draws no extra button', async ($, on) => {
+    world(on)
+    offer(on, { label: 'skills' })
+    await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+    const ui = await $.ui.mount({
+      plugin: 'context-meter', surface: 'desktop', component: 'AbovePrompt', requestId: 'band', props: BAND_PROPS,
+    } as never)
+    expect(await ui.find({ key: 'hosted' })).toBeUndefined()
+    expect(await ui.find({ key: 'details' })).toBeDefined()
+    await ui.unmount()
   })
 })

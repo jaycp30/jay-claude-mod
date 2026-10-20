@@ -1,0 +1,24 @@
+{
+  "name": "skill-map",
+  "version": "0.1.0",
+  "description": "A 📕 button above the prompt opens every installed skill and slash command, grouped and coloured, with the model's picks for this session on top.",
+  "author": {
+    "name": "jaycp30",
+    "url": "https://github.com/jaycp30"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "overridesFile": {
+      "type": "string",
+      "title": "Group overrides file",
+      "description": "JSON mapping a skill name to a group name. These win over the model's sorting.",
+      "default": "~/.claude/skill-map-overrides.json"
+    },
+    "model": {
+      "type": "string",
+      "title": "Model for sorting and suggestions",
+      "description": "An alias such as haiku, or a full model id.",
+      "default": "haiku"
+    }
+  }
+}

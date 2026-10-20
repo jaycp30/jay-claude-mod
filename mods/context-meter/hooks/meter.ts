@@ -85,3 +85,21 @@ export function barSegments(rows: ContextRow[], width: number): Segment[] {
 export function glyph(kind: ContextRow['kind']): string {
   return kind === 'free' ? '░' : kind === 'buffer' ? '▒' : '█'
 }
+
+// A button another mod offers to sit after `details` (skill-map's book). It
+// comes from that mod's state, so its shape is checked before anything is
+// drawn: a malformed value draws nothing rather than breaking the band.
+// Keep in sync with skill-map's copy (mods/skill-map/types/index.d.ts):
+// neither mod depends on the other, so each writes the shape down itself.
+export type HostedButton = {
+  label: string
+  command: string
+  args: string
+}
+
+export function asHostedButton(value: unknown): HostedButton | undefined {
+  if (typeof value !== 'object' || value === null) return undefined
+  const fields = ['label', 'command', 'args'] as const
+  const record = value as Record<string, unknown>
+  return fields.every(f => typeof record[f] === 'string') ? (record as HostedButton) : undefined
+}

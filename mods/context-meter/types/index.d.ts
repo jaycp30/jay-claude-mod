@@ -25,6 +25,11 @@ export type ContextSnapshot = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'context-meter': { snapshot: ContextSnapshot | null }
+    'context-meter': {
+      snapshot: ContextSnapshot | null
+      // True once this mod draws buttons other mods offer after `details`
+      // (skill-map's book), so they know not to draw their own.
+      hostsButton: boolean
+    }
   }
 }

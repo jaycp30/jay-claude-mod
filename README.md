@@ -9,6 +9,7 @@ Claude Code itself behaves.
 | [`chat-timestamps`](mods/chat-timestamps) | Puts a small time under each of your prompts and each of Claude's replies, like a messaging app. |
 | [`evidence-meter`](mods/evidence-meter) | One line under every answer saying what Claude actually checked that turn: files read, commands and tests run, what failed. |
 | [`context-meter`](mods/context-meter) | How full the context window is: a line above the prompt, and `/context-meter` for the breakdown by category. |
+| [`skill-map`](mods/skill-map) | A 📕 button above the prompt opens every installed skill and slash command, grouped and coloured, with picks for this session on top. |
 
 They grew out of months of real usage: a lot of AWS CLI work in other people's accounts, and
 repeated "please don't edit my CLAUDE.md". Rules in `CLAUDE.md` are advice a long session can
@@ -135,6 +136,50 @@ breakdown is the engine's local estimate (`summary` mode): no API calls, no cost
 same totals `/context` shows; `/context` may count a few categories more exactly.
 Colours are the theme colours `/context` assigns each category, which the desktop app's own
 `/context` view draws in a different palette.
+
+Another mod can put a button after `details` by offering one in its state (skill-map's book
+does): context-meter draws it and runs its command when pressed. It reads that state only, and
+draws nothing if the shape is wrong.
+
+## skill-map
+
+Every installed skill and slash command in one place, for when you've installed more than you
+remember.
+
+- **A book button after context-meter's `details`:** `📕` while the pane is shut, `📖` while it
+  shows; clicking it toggles the pane. Without context-meter the book gets a row of its own.
+  `/skill-map` opens the pane too.
+- **The pane** lists everything under coloured groups (UI / UX design, DevOps & cloud, Code
+  quality & review, Video & media, Docs & office files, Notes & Obsidian, Finance, Research &
+  learning, Claude Code & mods, Other), with a filter box. It merges what the session loaded
+  with what is on disk (`~/.claude/skills`, `~/.claude/commands`, enabled plugins), so a skill
+  scoped to other folders still shows, marked *not active here*. A skill installed twice
+  (`/minimalist-ui` and `/anthropic-skills:minimalist-ui`) says so. Built-in commands and
+  turned-off plugins are counted at the bottom, not listed.
+- **Click a skill** to type `/skill-name ` into the prompt box, in front of anything you had
+  already typed.
+- **Suggest for this session** asks the model for 3–5 skills that fit the working folder and
+  your last five prompts, each with a one-line reason. Only when pressed.
+
+### Cost
+
+The model (Haiku by default) sorts each new or changed skill into a group once; the answer is
+kept across sessions, so opening the pane again makes no call. A skill the model's reply leaves
+out goes under *Other*. Each Suggest press is one more small call. Both go through the
+session's own API client.
+
+### Settings
+
+| Setting | Default |
+| --- | --- |
+| Group overrides file: `{ "skill-name": "Group name" }`, wins over the model | `~/.claude/skill-map-overrides.json` |
+| Model for sorting and suggestions | `haiku` |
+
+### Limits
+
+- The book is an emoji, not a drawn icon: in this Claude Code version a button holds text only,
+  and a Markdown image inside a link draws no image on the desktop.
+- Mods can't add icons to the desktop app's header, so the book lives in the band.
 
 ## Developing
 
