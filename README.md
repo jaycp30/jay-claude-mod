@@ -1,6 +1,6 @@
 # jay-claude-mod
 
-Two [Claude Code](https://code.claude.com) mods: plugins made of function hooks that change how
+[Claude Code](https://code.claude.com) mods: plugins made of function hooks that change how
 Claude Code itself behaves.
 
 | Mod | What it does |
@@ -9,7 +9,7 @@ Claude Code itself behaves.
 | [`chat-timestamps`](mods/chat-timestamps) | Puts a small time under each of your prompts and each of Claude's replies, like a messaging app. |
 | [`evidence-meter`](mods/evidence-meter) | One line under every answer saying what Claude actually checked that turn: files read, commands and tests run, what failed. |
 | [`context-meter`](mods/context-meter) | How full the context window is: a line above the prompt, and `/context-meter` for the breakdown by category. |
-| [`skill-map`](mods/skill-map) | A 📕 button above the prompt opens every installed skill and slash command, grouped and coloured, with picks for this session on top. |
+| [`skill-map`](mods/skill-map) | A 📕 button above the prompt opens every installed skill and slash command, grouped and coloured, with picks for this session on top. Optional 🧐 / 🙋🏻 buttons beside it type `/how-sure` and `/humanizer` when those skills are installed. |
 
 They grew out of months of real usage: a lot of AWS CLI work in other people's accounts, and
 repeated "please don't edit my CLAUDE.md". Rules in `CLAUDE.md` are advice a long session can
