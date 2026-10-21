@@ -4,7 +4,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import {
   findDuplicates, fingerprint, groupSkills, mergeSkills, parseFrontmatter, parseOverrides,
-  parseSortReply, parseSuggestReply, shortDescription, splitName, UNSORTED, withSkill,
+  parseQuickButtons, parseSortReply, parseSuggestReply, shortDescription, splitName, UNSORTED, withSkill,
 } from '../hooks/catalog'
 import type { Skill } from '../types'
 
@@ -145,5 +145,21 @@ describe("the model's replies", () => {
   })
   test('a suggestion reply that is not an array gives nothing', () => {
     expect(parseSuggestReply('{"name": "a"}', ['a'])).toEqual([])
+  })
+})
+
+describe('parseQuickButtons', () => {
+  test('reads label=action:skill entries, emoji and plugin names included', () => {
+    expect(parseQuickButtons('🧐=run:how-sure, 🙋🏻=type:/humanizer, 📄=type:pdf-viewer:open')).toEqual([
+      { label: '🧐', action: 'run', name: 'how-sure' },
+      { label: '🙋🏻', action: 'type', name: 'humanizer' },
+      { label: '📄', action: 'type', name: 'pdf-viewer:open' },
+    ])
+  })
+  test('skips malformed entries and keeps the rest', () => {
+    expect(parseQuickButtons('🧐=launch:how-sure, oops, 🙋🏻=type:humanizer')).toEqual([
+      { label: '🙋🏻', action: 'type', name: 'humanizer' },
+    ])
+    expect(parseQuickButtons('')).toEqual([])
   })
 })

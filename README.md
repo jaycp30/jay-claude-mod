@@ -149,6 +149,11 @@ remember.
 - **A book button after context-meter's `details`:** `📕` while the pane is shut, `📖` while it
   shows; clicking it toggles the pane. Without context-meter the book gets a row of its own.
   `/skill-map` opens the pane too.
+- **Quick buttons after the book**, from the *Quick buttons* setting: `🧐` for `/how-sure`,
+  `🙋🏻` types `/humanizer ` into the prompt box for you to finish. A `run` button tries to run
+  its skill at once; Claude Code 2.1.303 doesn't let a mod run a skill, so for now it types it
+  instead and you press Enter. Like the book, each press shows as a `/skill-map …` line in the
+  chat.
 - **The pane** lists everything under coloured groups (UI / UX design, DevOps & cloud, Code
   quality & review, Video & media, Docs & office files, Notes & Obsidian, Finance, Research &
   learning, Claude Code & mods, Other), with a filter box. It merges what the session loaded
@@ -174,6 +179,7 @@ session's own API client.
 | --- | --- |
 | Group overrides file: `{ "skill-name": "Group name" }`, wins over the model | `~/.claude/skill-map-overrides.json` |
 | Model for sorting and suggestions | `haiku` |
+| Quick buttons: comma-separated `label=run:skill` or `label=type:skill` | `🧐=run:how-sure, 🙋🏻=type:humanizer` |
 
 ### Limits
 

@@ -1,6 +1,6 @@
 {
   "name": "skill-map",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A 📕 button above the prompt opens every installed skill and slash command, grouped and coloured, with the model's picks for this session on top.",
   "author": {
     "name": "jaycp30",
@@ -13,6 +13,12 @@
       "title": "Group overrides file",
       "description": "JSON mapping a skill name to a group name. These win over the model's sorting.",
       "default": "~/.claude/skill-map-overrides.json"
+    },
+    "quickButtons": {
+      "type": "string",
+      "title": "Quick buttons beside the book",
+      "description": "Comma-separated label=action:skill. run runs the skill at once; type puts it in the prompt box for you to finish.",
+      "default": "🧐=run:how-sure, 🙋🏻=type:humanizer"
     },
     "model": {
       "type": "string",

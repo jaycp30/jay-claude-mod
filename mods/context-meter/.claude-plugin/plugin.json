@@ -1,6 +1,6 @@
 {
   "name": "context-meter",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Shows how full the context window is: a line above the prompt, and /context-meter for a pane with the breakdown by category.",
   "author": {
     "name": "jaycp30",

@@ -103,3 +103,10 @@ export function asHostedButton(value: unknown): HostedButton | undefined {
   const record = value as Record<string, unknown>
   return fields.every(f => typeof record[f] === 'string') ? (record as HostedButton) : undefined
 }
+
+// A list of offered buttons (skill-map's quick buttons). Malformed entries
+// are dropped one by one; anything but an array is no buttons.
+export function asHostedButtons(value: unknown): HostedButton[] {
+  if (!Array.isArray(value)) return []
+  return value.map(asHostedButton).filter((b): b is HostedButton => b !== undefined)
+}

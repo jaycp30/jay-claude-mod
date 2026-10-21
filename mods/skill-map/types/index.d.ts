@@ -63,6 +63,9 @@ declare module 'claude-code' {
       // True while the pane is open: the band draws the open book.
       isOpen: boolean
       hostedButton: HostedButton | null
+      // The quick buttons from the settings (🧐, 🙋🏻), offered the same way:
+      // the host draws them after the book.
+      quickButtons: HostedButton[]
       catalog: Catalog | null
       // name -> group, from the store plus the person's overrides.
       groups: Record<string, string>

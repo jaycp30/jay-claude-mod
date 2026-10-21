@@ -13,7 +13,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { ContextSnapshot } from '../types'
-import { asHostedButton, barSegments, formatTokens, glyph, isNearLimit, orderRows, percentOf, share, toSnapshot } from './meter'
+import { asHostedButton, asHostedButtons, barSegments, formatTokens, glyph, isNearLimit, orderRows, percentOf, share, toSnapshot } from './meter'
 
 const PANE = 'context-meter'
 const TITLE = 'Context window'
@@ -22,6 +22,7 @@ const snapshot = atom({ plugin: 'context-meter', key: 'snapshot' } as const, nul
 // skill-map's book button, drawn after `details` when that mod offers one.
 // Another mod's state: only read, and its shape checked (asHostedButton).
 const HOSTED_BUTTON = { plugin: 'skill-map', key: 'hostedButton' } as const
+const QUICK_BUTTONS = { plugin: 'skill-map', key: 'quickButtons' } as const
 // Says to other mods that this one draws their offered button.
 const hostsButton = atom({ plugin: 'context-meter', key: 'hostsButton' } as const, false)
 
@@ -83,15 +84,20 @@ export const register: Register = on => {
     const offered = await ($.state.get(HOSTED_BUTTON as never) as Promise<{ value?: unknown }>)
       .catch(() => undefined)
     const hosted = asHostedButton(offered?.value)
-    // A hosted button needs room on the line: the bar gives up 8 cells for it,
-    // or the desktop may wrap the button onto a line of its own.
-    const width = Math.max(10, Math.min(24, e.props.bodyColumns - 52) - (hosted ? 8 : 0))
+    const quickOffered = await ($.state.get(QUICK_BUTTONS as never) as Promise<{ value?: unknown }>)
+      .catch(() => undefined)
+    // The quick buttons sit after the book, so they are drawn only with it.
+    const quick = hosted ? asHostedButtons(quickOffered?.value) : []
+    // Hosted buttons need room on the line: the bar gives up 8 cells for the
+    // book and 4 for each quick button, or the desktop may wrap them onto a
+    // line of their own.
+    const reserved = hosted ? 8 + 4 * quick.length : 0
+    const width = Math.max(10, Math.min(24, e.props.bodyColumns - 52) - reserved)
     // The offering mod may be gone (turned off mid-session) while its state
     // stays: log a failed run rather than dropping it.
-    const runHosted = () => {
-      if (!hosted) return
-      void $.command.run({ command: hosted.command, args: hosted.args })
-        .catch(error => $.ui.log(`context-meter: /${hosted.command} ${hosted.args} failed: ${String(error)}`))
+    const runHosted = (button: { command: string; args: string }) => {
+      void $.command.run({ command: button.command, args: button.args })
+        .catch(error => $.ui.log(`context-meter: /${button.command} ${button.args} failed: ${String(error)}`))
     }
     return (
       <Box flexDirection="column">
@@ -105,7 +111,11 @@ export const register: Register = on => {
           <Text> </Text>
           <Button key="details" label="details" onPress={() => $.ui.open({ id: PANE, title: TITLE })} />
           {hosted && <Text> </Text>}
-          {hosted && <Button key="hosted" label={hosted.label} onPress={runHosted} />}
+          {hosted && <Button key="hosted" label={hosted.label} onPress={() => runHosted(hosted)} />}
+          {quick.flatMap((button, i) => [
+            <Text key={`gap:${i}`}> </Text>,
+            <Button key={`quick:${i}`} label={button.label} onPress={() => runHosted(button)} />,
+          ])}
         </Box>
         {below}
       </Box>

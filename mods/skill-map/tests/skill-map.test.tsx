@@ -215,6 +215,38 @@ describe('the pane', () => {
     await band.unmount()
   })
 
+  test('quick buttons are offered, and run or type their skill', async ($, on) => {
+    world(on, goodModel)
+    let draft = ''
+    on('prompt.read', () => ({ value: { text: draft, cursor: draft.length } }))
+    on('prompt.fill', ($, e) => {
+      draft = e.text
+      return { isFilled: true }
+    })
+    const offered: unknown[] = []
+    on('state.set', ($, e, next) => {
+      const { key, value } = e as { key: string; value?: unknown }
+      if (key === 'quickButtons') offered.push(value)
+      return next(e)
+    })
+    await $.session.start(start)
+    expect(offered.at(-1)).toEqual([
+      { label: '🧐', command: 'skill-map', args: 'run how-sure' },
+      { label: '🙋🏻', command: 'skill-map', args: 'type humanizer' },
+    ])
+    const run = { origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 80 } }
+
+    const typed = await $.command.run({ command: 'skill-map', args: 'type humanizer', ...run } as never)
+    expect(typed.text).toBeUndefined()
+    expect(draft).toBe('/humanizer ')
+
+    // The test engine has no /how-sure, so running it is refused: the
+    // fallback types it instead.
+    draft = ''
+    await $.command.run({ command: 'skill-map', args: 'run how-sure', ...run } as never)
+    expect(draft).toBe('/how-sure ')
+  })
+
   test('clicking a skill types it into the prompt box, keeping the draft', async ($, on) => {
     world(on, goodModel)
     let draft = 'plan the VPC change'

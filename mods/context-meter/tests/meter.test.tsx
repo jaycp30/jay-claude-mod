@@ -2,7 +2,7 @@ import type { On, SessionContextBreakdown } from 'claude-code'
 import { describe, expect, test } from 'claude-code/testing'
 
 import type { ContextRow } from '../types'
-import { asHostedButton, barSegments, formatTokens, isNearLimit, orderRows, percentOf, share, toSnapshot } from '../hooks/meter'
+import { asHostedButton, asHostedButtons, barSegments, formatTokens, isNearLimit, orderRows, percentOf, share, toSnapshot } from '../hooks/meter'
 
 // A breakdown shaped like the one in the README screenshot. Only the fields the
 // mod reads are filled; the cast keeps the fixture readable.
@@ -156,13 +156,13 @@ const BOOK = { label: '📕', command: 'skill-map', args: 'toggle' }
 
 // Answers reads of skill-map's state with `offered`; every other read goes
 // on to the kit's own state.
-function offer(on: On, offered: unknown) {
+function offer(on: On, offered: unknown, quick: unknown = undefined) {
   // The event's type knows only this mod's state, hence the widening.
   on('state.get', ($, e, next) => {
     const { plugin, key } = e as { plugin: string; key: string }
-    return plugin === 'skill-map' && key === 'hostedButton'
-      ? { value: { value: offered, version: 1 } as never }
-      : next(e)
+    if (plugin === 'skill-map' && key === 'hostedButton') return { value: { value: offered, version: 1 } as never }
+    if (plugin === 'skill-map' && key === 'quickButtons') return { value: { value: quick, version: 1 } as never }
+    return next(e)
   })
   // Nothing else draws a band here: the engine's own is empty.
   on('ui.render', ($, e) => {
@@ -196,6 +196,32 @@ describe('a button another mod offers', () => {
       await ui.unmount()
     }
     expect(ran).toEqual(['skill-map toggle', 'skill-map toggle'])
+  })
+
+  test('quick buttons sit after the book, and only with it', async ($, on) => {
+    world(on)
+    const QUICK = [
+      { label: '🧐', command: 'skill-map', args: 'run how-sure' },
+      { label: 'bad' },
+      { label: '🙋🏻', command: 'skill-map', args: 'type humanizer' },
+    ]
+    offer(on, BOOK, QUICK)
+    const ran: string[] = []
+    on('command.run', ($, e) => {
+      ran.push(`${e.command} ${e.args}`)
+      return {}
+    })
+    await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+    const ui = await $.ui.mount({
+      plugin: 'context-meter', surface: 'desktop', component: 'AbovePrompt', requestId: 'band', props: BAND_PROPS,
+    } as never)
+    expect((await ui.find({ key: 'quick:0' }))?.props.label).toBe('🧐')
+    expect((await ui.find({ key: 'quick:1' }))?.props.label).toBe('🙋🏻')
+    await ui.press({ key: 'quick:0' })
+    await ui.press({ key: 'quick:1' })
+    expect(ran).toEqual(['skill-map run how-sure', 'skill-map type humanizer'])
+    expect(asHostedButtons(QUICK)).toHaveLength(2)
+    expect(asHostedButtons('nope')).toEqual([])
   })
 
   test('nothing offered, or a malformed offer, draws no extra button', async ($, on) => {

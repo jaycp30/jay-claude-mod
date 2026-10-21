@@ -155,6 +155,23 @@ export function withSkill(draft: string, name: string, commands: ReadonlySet<str
   return `/${name} ${text}`
 }
 
+// ---- Quick buttons -------------------------------------------------------------
+
+// A button beside the book, from the quickButtons setting: "🧐=run:how-sure".
+// `run` runs the skill at once; `type` puts it in the prompt box for the
+// person to finish (a skill that needs text to work on).
+export type QuickButton = { label: string; action: 'run' | 'type'; name: string }
+
+// Parses the setting, a comma-separated list of `label=action:name`. A
+// malformed entry is skipped so one typo doesn't drop every button.
+export function parseQuickButtons(setting: string): QuickButton[] {
+  return setting.split(',').flatMap(entry => {
+    const match = /^\s*(\S+?)\s*=\s*(run|type)\s*:\s*\/?([\w:.-]+)\s*$/.exec(entry)
+    if (!match?.[1] || !match[3]) return []
+    return [{ label: match[1], action: match[2] === 'run' ? 'run' : 'type', name: match[3] }]
+  })
+}
+
 // ---- Grouping for the pane ---------------------------------------------------
 
 export type Group = { name: string; color: string; skills: Skill[] }

@@ -20,7 +20,8 @@ import type { EngineInterface, PluginOptions, Register } from 'claude-code'
 import type { Catalog, HostedButton, Skill, SortStatus, Suggestions } from '../types'
 import {
   findDuplicates, fingerprint, groupSkills, mergeSkills, parseFrontmatter, parseOverrides,
-  parseSortReply, parseSuggestReply, shortDescription, sortPrompt, splitName, suggestPrompt, withSkill,
+  parseQuickButtons, parseSortReply, parseSuggestReply, shortDescription, sortPrompt, splitName,
+  suggestPrompt, withSkill,
 } from './catalog'
 import type { DiskSkill } from './catalog'
 
@@ -29,6 +30,7 @@ const TITLE = 'Skills'
 
 const isOpen = atom({ plugin: 'skill-map', key: 'isOpen' } as const, false)
 const hostedButton = atom({ plugin: 'skill-map', key: 'hostedButton' } as const, null as HostedButton | null)
+const quickButtons = atom({ plugin: 'skill-map', key: 'quickButtons' } as const, [] as HostedButton[])
 const catalog = atom({ plugin: 'skill-map', key: 'catalog' } as const, null as Catalog | null)
 const groups = atom({ plugin: 'skill-map', key: 'groups' } as const, {} as Record<string, string>)
 const sortStatus = atom({ plugin: 'skill-map', key: 'sortStatus' } as const, { kind: 'idle' } as SortStatus)
@@ -259,6 +261,25 @@ async function typeSkill($: EngineInterface, name: string): Promise<void> {
   await $.prompt.fill({ text: withSkill(box.text, name, commands), mode: 'replace' }).catch(() => undefined)
 }
 
+// Runs a skill as if the person typed it. The engine may refuse to run a
+// skill (rather than a mod's own command) from a mod; then it is typed into
+// the box instead, so the press still leaves the person one Enter away.
+async function runSkill($: EngineInterface, name: string): Promise<void> {
+  try {
+    await $.command.run({ command: name })
+  } catch (error) {
+    $.ui.log(`skill-map: /${name} could not run from a button (${String(error)}), so it was typed instead`)
+    await typeSkill($, name)
+  }
+}
+
+// The quick buttons as the host draws them: each press runs
+// `/skill-map run <name>` or `/skill-map type <name>`.
+function offeredQuickButtons(): HostedButton[] {
+  return parseQuickButtons(String(config.quickButtons ?? ''))
+    .map(b => ({ label: b.label, command: 'skill-map', args: `${b.action} ${b.name}` }))
+}
+
 // One suggestion request at a time: a second press while one runs does
 // nothing (the flag, not the drawn state, which lags a fast double press).
 let isSuggesting = false
@@ -307,6 +328,7 @@ export const register: Register = (on, options) => {
     // After a reload the pane may still be up: draw the book to match.
     const panes = await $.ui.panes().catch(() => [])
     await setOpen($, panes.some(p => p.id === PANE))
+    await update($, quickButtons, () => offeredQuickButtons())
     // State outlives a reload but the work behind it doesn't: a request that
     // was "thinking" or "sorting" when the module reloaded will never finish.
     if ((await read($, suggestions)).kind === 'thinking') await setSuggestions($, { kind: 'none' })
@@ -315,10 +337,17 @@ export const register: Register = (on, options) => {
   })
 
   // `/skill-map` opens the pane; `/skill-map toggle` is what the hosted book
-  // runs, and answers with no text so a click leaves no line in the chat.
+  // runs, and `run <skill>` / `type <skill>` what the quick buttons run. Those
+  // answer with no text so a click leaves no line in the chat.
   on('command.run', { command: 'skill-map' }, async ($, e) => {
-    if (e.args.trim() === 'toggle') {
+    const args = e.args.trim()
+    if (args === 'toggle') {
       await toggle($)
+      return {}
+    }
+    const quick = /^(run|type)\s+(\S+)$/.exec(args)
+    if (quick?.[2]) {
+      await (quick[1] === 'run' ? runSkill($, quick[2]) : typeSkill($, quick[2]))
       return {}
     }
     await openPane($)
@@ -367,6 +396,14 @@ export const register: Register = (on, options) => {
         <Box flexDirection="column" flexGrow={1}>{below}</Box>
         <Box marginLeft={1}>
           <Button key="book" label={bookLabel(open)} onPress={() => toggle($)} />
+          {parseQuickButtons(String(config.quickButtons ?? '')).map(b => (
+            <Box key={`quick:${b.name}`} marginLeft={1}>
+              <Button
+                key={`quickbutton:${b.name}`} label={b.label}
+                onPress={() => (b.action === 'run' ? runSkill($, b.name) : typeSkill($, b.name))}
+              />
+            </Box>
+          ))}
         </Box>
       </Box>
     )
