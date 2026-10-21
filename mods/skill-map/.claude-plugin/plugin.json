@@ -1,6 +1,6 @@
 {
   "name": "skill-map",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A 📕 button above the prompt opens every installed skill and slash command, grouped and coloured, with the model's picks for this session on top.",
   "author": {
     "name": "jaycp30",

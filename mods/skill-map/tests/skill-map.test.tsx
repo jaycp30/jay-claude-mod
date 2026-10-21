@@ -46,7 +46,11 @@ const USAGE = { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: 
 type ModelAnswer = { text: string } | { fail: true } | { refuse: true }
 
 // Mocks everything the plugin reaches and returns what it observed.
-function world(on: On, model: (prompt: string) => ModelAnswer, options: { listFails?: boolean } = {}) {
+function world(
+  on: On,
+  model: (prompt: string) => ModelAnswer,
+  options: { listFails?: boolean; loaded?: readonly object[] } = {},
+) {
   const seen = { prompts: [] as string[], opened: [] as string[] }
   const open = new Set<string>()
   mock.env(on, { HOME })
@@ -54,7 +58,7 @@ function world(on: On, model: (prompt: string) => ModelAnswer, options: { listFa
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('session.cwd', () => ({ value: `${HOME}/Claude-test/infra` }))
   on('command.register', () => ({ value: { command: 'skill-map' } }))
-  on('command.list', () => (options.listFails ? { deny: 'no list' } : { value: LOADED as never }))
+  on('command.list', () => (options.listFails ? { deny: 'no list' } : { value: (options.loaded ?? LOADED) as never }))
   on('fs.list', ($, e) => {
     const entries = FOLDERS[e.path]
     return entries ? { value: entries } : { deny: `ENOENT: ${e.path}` }
@@ -215,8 +219,26 @@ describe('the pane', () => {
     await band.unmount()
   })
 
+  test('a quick button whose skill is not loaded is not offered', async ($, on) => {
+    world(on, goodModel, { loaded: [...LOADED, { name: 'how-sure', description: 'Audit', source: 'user' }] })
+    const offered: unknown[] = []
+    on('state.set', ($, e, next) => {
+      const { key, value } = e as { key: string; value?: unknown }
+      if (key === 'quickButtons') offered.push(value)
+      return next(e)
+    })
+    await $.session.start(start)
+    expect(offered.at(-1)).toEqual([{ label: '🧐', command: 'skill-map', args: 'run how-sure' }])
+  })
+
   test('quick buttons are offered, and run or type their skill', async ($, on) => {
-    world(on, goodModel)
+    world(on, goodModel, {
+      loaded: [
+        ...LOADED,
+        { name: 'how-sure', description: 'Audit', source: 'user' },
+        { name: 'humanizer', description: 'Rewrite', source: 'user' },
+      ],
+    })
     let draft = ''
     on('prompt.read', () => ({ value: { text: draft, cursor: draft.length } }))
     on('prompt.fill', ($, e) => {

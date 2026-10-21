@@ -4,7 +4,8 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import {
   findDuplicates, fingerprint, groupSkills, mergeSkills, parseFrontmatter, parseOverrides,
-  parseQuickButtons, parseSortReply, parseSuggestReply, shortDescription, splitName, UNSORTED, withSkill,
+  installedQuickButtons, parseQuickButtons, parseSortReply, parseSuggestReply, shortDescription, splitName,
+  UNSORTED, withSkill,
 } from '../hooks/catalog'
 import type { Skill } from '../types'
 
@@ -161,5 +162,16 @@ describe('parseQuickButtons', () => {
       { label: '🙋🏻', action: 'type', name: 'humanizer' },
     ])
     expect(parseQuickButtons('')).toEqual([])
+  })
+})
+
+describe('installedQuickButtons', () => {
+  const buttons = parseQuickButtons('🧐=run:how-sure, 🙋🏻=type:humanizer')
+  test('keeps only buttons for skills the session loaded', () => {
+    expect(installedQuickButtons(buttons, new Set(['humanizer'])).map(b => b.label)).toEqual(['🙋🏻'])
+    expect(installedQuickButtons(buttons, new Set())).toEqual([])
+  })
+  test('keeps every button when the list could not be read', () => {
+    expect(installedQuickButtons(buttons, undefined)).toHaveLength(2)
   })
 })

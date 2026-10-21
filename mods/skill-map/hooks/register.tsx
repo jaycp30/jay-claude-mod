@@ -19,7 +19,7 @@ import type { EngineInterface, PluginOptions, Register } from 'claude-code'
 
 import type { Catalog, HostedButton, Skill, SortStatus, Suggestions } from '../types'
 import {
-  findDuplicates, fingerprint, groupSkills, mergeSkills, parseFrontmatter, parseOverrides,
+  findDuplicates, fingerprint, groupSkills, installedQuickButtons, mergeSkills, parseFrontmatter, parseOverrides,
   parseQuickButtons, parseSortReply, parseSuggestReply, shortDescription, sortPrompt, splitName,
   suggestPrompt, withSkill,
 } from './catalog'
@@ -273,10 +273,12 @@ async function runSkill($: EngineInterface, name: string): Promise<void> {
   }
 }
 
-// The quick buttons as the host draws them: each press runs
-// `/skill-map run <name>` or `/skill-map type <name>`.
-function offeredQuickButtons(): HostedButton[] {
-  return parseQuickButtons(String(config.quickButtons ?? ''))
+// The quick buttons as the host draws them, only for skills this session
+// loaded: each press runs `/skill-map run <name>` or `/skill-map type <name>`.
+async function offeredQuickButtons($: EngineInterface): Promise<HostedButton[]> {
+  const loaded = await $.command.list().catch(() => undefined)
+  const names = loaded ? new Set(loaded.map(c => c.name)) : undefined
+  return installedQuickButtons(parseQuickButtons(String(config.quickButtons ?? '')), names)
     .map(b => ({ label: b.label, command: 'skill-map', args: `${b.action} ${b.name}` }))
 }
 
@@ -328,7 +330,8 @@ export const register: Register = (on, options) => {
     // After a reload the pane may still be up: draw the book to match.
     const panes = await $.ui.panes().catch(() => [])
     await setOpen($, panes.some(p => p.id === PANE))
-    await update($, quickButtons, () => offeredQuickButtons())
+    const offered = await offeredQuickButtons($)
+    await update($, quickButtons, () => offered)
     // State outlives a reload but the work behind it doesn't: a request that
     // was "thinking" or "sorting" when the module reloaded will never finish.
     if ((await read($, suggestions)).kind === 'thinking') await setSuggestions($, { kind: 'none' })
@@ -389,18 +392,19 @@ export const register: Register = (on, options) => {
       ($.state.get(CONTEXT_METER_SNAPSHOT as never) as Read).catch(() => undefined),
     ])
     if (hosts?.value === true && meter?.value) return below
-    const open = await read($, isOpen)
+    const [open, quick] = await Promise.all([read($, isOpen), read($, quickButtons)])
     const { Box, Button } = $.ui.resolve(e)
     return (
       <Box flexDirection="row" alignItems="flex-start">
         <Box flexDirection="column" flexGrow={1}>{below}</Box>
         <Box marginLeft={1}>
           <Button key="book" label={bookLabel(open)} onPress={() => toggle($)} />
-          {parseQuickButtons(String(config.quickButtons ?? '')).map(b => (
-            <Box key={`quick:${b.name}`} marginLeft={1}>
+          {quick.map(b => (
+            <Box key={`quick:${b.args}`} marginLeft={1}>
               <Button
-                key={`quickbutton:${b.name}`} label={b.label}
-                onPress={() => (b.action === 'run' ? runSkill($, b.name) : typeSkill($, b.name))}
+                key={`quickbutton:${b.args}`} label={b.label}
+                onPress={() => void $.command.run({ command: b.command, args: b.args })
+                  .catch(error => $.ui.log(`skill-map: /${b.command} ${b.args} failed: ${String(error)}`))}
               />
             </Box>
           ))}

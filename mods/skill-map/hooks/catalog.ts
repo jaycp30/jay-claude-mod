@@ -172,6 +172,17 @@ export function parseQuickButtons(setting: string): QuickButton[] {
   })
 }
 
+// The quick buttons whose skill this session loaded: a button for a skill
+// that isn't installed would only type a command that fails. `loaded` is
+// undefined when the session's list couldn't be read; then every button
+// stays, rather than hiding ones the person set up.
+export function installedQuickButtons(
+  buttons: readonly QuickButton[],
+  loaded: ReadonlySet<string> | undefined,
+): QuickButton[] {
+  return loaded ? buttons.filter(b => loaded.has(b.name)) : [...buttons]
+}
+
 // ---- Grouping for the pane ---------------------------------------------------
 
 export type Group = { name: string; color: string; skills: Skill[] }
